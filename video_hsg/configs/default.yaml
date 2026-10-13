@@ -1,0 +1,56 @@
+# 跨帧关联、时间聚合和 Clip 切分的全部阈值。改权重即可做消融，不必改代码。
+
+paths:
+  # 相对 video_hsg 项目根目录。只读 HSGG 输出，不改原始 JSON。
+  scene_dir: "../HSGG_NAVQA_JSON/hsgg_navqa_seq0_every10_full"
+  output_dir: "processed/navqa_seq0"
+  # CODa seq0 cam0 原图。scripts/download_rgb.py 会把 PNG 放在这里。
+  rgb_root: "data/rgb/navqa_seq0"
+
+image:
+  width: 1224
+  height: 1024
+
+tracking:
+  high_score_threshold: 0.50
+  low_score_threshold: 0.25
+  init_score_threshold: 0.35
+  match_threshold: 0.55
+
+  weight_iou: 0.30
+  weight_center: 0.20
+  weight_size: 0.10
+  weight_label: 0.20
+  weight_attribute: 0.10
+  weight_hierarchy: 0.05
+  weight_relation: 0.05
+
+  min_confirm_hits: 2
+  max_missed_frames: 3
+  # 0 表示 tentative 轨迹第一次丢失就删除，避免单帧噪声长成轨迹。
+  tentative_max_missed: 0
+
+  center_sigma: 0.20
+  center_gate: 0.40
+  min_iou_gate: 0.02
+
+  # 已确认轨迹被移除后，允许在若干采样帧内按高分恢复。0 表示关闭。
+  revive_max_gap: 8
+  revive_min_score: 0.62
+
+temporal_relation:
+  window_size: 5
+  ttl_frames: 2
+  dominant_ratio: 0.6
+
+clip:
+  sampled_frames_per_clip: 10
+  overlap: 2
+
+export:
+  # 粘贴进 Neo4j Browser 的子图规模。完整表另存 CSV。
+  neo4j_track_limit: 60
+  neo4j_relation_limit: 150
+  neo4j_event_limit: 40
+  neo4j_min_span: 2
+  neo4j_min_confidence: 0.5

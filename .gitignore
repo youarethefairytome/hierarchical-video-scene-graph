@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.venv/
+venv/
+
+# 下载的原图、视频和 zip 目录缓存（约 1.5GB，可重新下载）
+video_hsg/data/
+
+# 流水线生成结果（可运行 scripts/build_scene.py 再生成）
+video_hsg/processed/
+
+# HSGG 数据包和解压结果
+HSGG_NAVQA_JSON/
+HSGG_NEXTQA_JSON/
+HSGG_OPENEQA_JSON/
+*.tar.gz
+*.rar
+*.zip
+*.part
+
+# 系统文件
+Thumbs.db
+Desktop.ini
+.DS_Store
