@@ -8,6 +8,8 @@ from pathlib import Path
 from PIL import Image
 
 from video_hsg.query.search import ENTITY_COLUMNS, search_bundle
+from video_hsg.visualization.layered import build_layered_scene
+from video_hsg.visualization.timeline_layers import build_timeline_layers
 from video_hsg.visualization.render import (
     render_frame,
     render_frame_graph,
@@ -33,6 +35,7 @@ class DemoSession:
         self.n_frames = len(self.frames)
         self.rgb_root = Path(rgb_root) if rgb_root else None
         self._video_graph = None
+        self._timeline_json: str | None = None
         self._frame_cache: dict[tuple, Image.Image] = {}
         self._clip_cache: dict[tuple, Image.Image] = {}
 
@@ -171,11 +174,23 @@ class DemoSession:
         )
         return {"info": info, "frame": self._frame_image(frame, show_parts, selected, show_boxes), "frame_id": frame_id}
 
+    def timeline_json(self) -> str:
+        if self._timeline_json is None:
+            scene_dir = Path(self.meta.get("scene_dir") or "")
+            payload = build_timeline_layers(self.frames, scene_dir)
+            self._timeline_json = json.dumps(payload, ensure_ascii=False)
+        return self._timeline_json
+
+    def layered_json(self, frame_id: int) -> str:
+        frame_id, _selected, frame = self._prepare(frame_id, [])
+        return json.dumps(build_layered_scene(frame), ensure_ascii=False)
+
     def view(self, frame_id: int, show_parts: bool, highlight: list[str] | set[str] | None, show_boxes: bool = True):
         frame_id, selected, frame = self._prepare(frame_id, highlight)
         clip = self.clip_for_frame(frame_id)
         frame_image = self._frame_image(frame, show_parts, selected, show_boxes)
         frame_graph = render_frame_graph(frame, show_parts, selected)
+        layered = json.dumps(build_layered_scene(frame), ensure_ascii=False)
         timeline = render_timeline(self.tracks, frame_id, clip, selected, self.n_frames)
         if self._video_graph is None:
             nodes, edges = self._video_nodes_edges()
@@ -237,6 +252,7 @@ class DemoSession:
             "info": info,
             "frame": frame_image,
             "frame_graph": frame_graph,
+            "layered": layered,
             "timeline": timeline,
             "clip_graph": self._clip_cache[clip_key],
             "video_graph": self._video_graph,

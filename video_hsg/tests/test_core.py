@@ -172,6 +172,77 @@ class TemporalTest(unittest.TestCase):
         self.assertEqual(relations[0]["end_frame"], 3)
 
 
+class TimelineLayerTest(unittest.TestCase):
+    def test_l3_is_hierarchy_layer_not_attribute(self):
+        from video_hsg.visualization.timeline_layers import hierarchy_sets, layer_of
+
+        layer2, layer3 = hierarchy_sets(
+            {
+                "layer1_nodes": ["building1", "door2"],
+                "layer2_mapping": {"building1": ["windows1"]},
+                "layer3_mapping": {"door2": ["label1", "label2"]},
+            }
+        )
+        self.assertEqual(layer_of("label1", layer2, layer3), 3)
+        self.assertEqual(layer_of("windows1", layer2, layer3), 2)
+        self.assertEqual(layer_of("building1", layer2, layer3), 1)
+        self.assertEqual(layer_of("door2", layer2, layer3), 1)
+        from video_hsg.visualization.timeline_layers import parent_links
+
+        pairs = parent_links(
+            {
+                "layer2_mapping": {"building1": ["windows1"]},
+                "layer3_mapping": {"door2": ["label1"]},
+            }
+        )
+        self.assertEqual(pairs, [("building1", "windows1"), ("door2", "label1")])
+
+
+class LayeredSceneTest(unittest.TestCase):
+    def test_frame_has_five_layers(self):
+        from video_hsg.visualization.layered import build_layered_scene
+
+        config = load_config()
+        frames, _warnings, _mismatches = load_frames(Path(config["paths"]["scene_dir"]), config, max_frames=1)
+        frame = frames[0]
+        payload = build_layered_scene(
+            {
+                "frame_id": frame.frame_id,
+                "source_frame": frame.source_frame,
+                "entities": [
+                    {
+                        "local_name": entity.local_name,
+                        "canonical_label": entity.canonical_label,
+                        "score": entity.score,
+                        "attribute_text": entity.attribute_text,
+                        "parent_local_name": entity.parent_local_name,
+                        "track_id": None,
+                    }
+                    for entity in frame.entities
+                ],
+                "relations": [
+                    {
+                        "subject_local_name": relation.subject_local_name,
+                        "object_local_name": relation.object_local_name,
+                        "predicate": relation.predicate_norm,
+                        "subject_track_id": None,
+                        "object_track_id": None,
+                    }
+                    for relation in frame.relations
+                ],
+            }
+        )
+        layers = {node["layer"] for node in payload["nodes"]}
+        self.assertEqual(layers, {0, 1, 2, 3, 4})
+        names = {entity.local_name for entity in frame.entities}
+        roots = [entity for entity in frame.entities if not entity.parent_local_name or entity.parent_local_name not in names]
+        layer1 = [node for node in payload["nodes"] if node["layer"] == 1]
+        layer4 = [node for node in payload["nodes"] if node["layer"] == 4]
+        self.assertEqual(len(layer1), len(roots))
+        self.assertEqual(len(layer4), len(frame.relations))
+        self.assertTrue(any(node["id"] == "scene" for node in payload["nodes"]))
+
+
 class SearchTest(unittest.TestCase):
     def test_entity_query_does_not_match_every_track(self):
         bundle = {

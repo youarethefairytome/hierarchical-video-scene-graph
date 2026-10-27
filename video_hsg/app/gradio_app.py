@@ -14,6 +14,46 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
+LAYERED_JS = (ROOT / "app" / "layered_view.js").read_text(encoding="utf-8")
+TIMELINE_JS = (ROOT / "app" / "timeline_view.js").read_text(encoding="utf-8")
+TIMELINE_HTML = """
+<div class="stage">
+  <canvas></canvas>
+  <button class="reset" type="button">复位视角</button>
+  <label class="hide-text"><input class="hide-labels" type="checkbox"> 不显示文字</label>
+  <div class="hud">拖动旋转，滚轮缩放，点击节点。底部进度条移动 X 轴并放大到该帧。</div>
+  <div class="scrub">
+    <span>X</span>
+    <input class="x-slider" type="range" min="0" max="1" value="0" step="1">
+    <span class="x-readout">全段</span>
+  </div>
+</div>
+"""
+TIMELINE_CSS = """
+.stage { position: relative; height: 720px; background: #f7f8fb; border-radius: 12px; overflow: hidden; }
+canvas { width: 100%; height: calc(100% - 56px); display: block; touch-action: none; cursor: grab; }
+.reset { position: absolute; top: 10px; right: 10px; border: 0; border-radius: 8px; padding: 6px 10px; background: #1f4e79; color: white; cursor: pointer; }
+.hide-text { position: absolute; top: 10px; left: 12px; background: rgba(255,255,255,0.92); border-radius: 8px; padding: 6px 10px; font-size: 13px; color: #1f2937; cursor: pointer; }
+.hud { position: absolute; left: 12px; bottom: 64px; max-width: 52%; background: rgba(255,255,255,0.92); border-radius: 10px; padding: 8px 10px; font-size: 13px; line-height: 1.45; color: #1f2937; }
+.scrub { position: absolute; left: 12px; right: 12px; bottom: 10px; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.94); border-radius: 10px; padding: 8px 12px; }
+.x-slider { flex: 1; }
+.x-readout { min-width: 96px; font-size: 13px; color: #1f2937; }
+"""
+LAYERED_HTML = """
+<div class="stage">
+  <canvas></canvas>
+  <button class="reset" type="button">复位视角</button>
+  <label class="hide-text"><input class="hide-labels" type="checkbox"> 不显示文字</label>
+  <div class="hud">拖动旋转，滚轮缩放，点击节点</div>
+</div>
+"""
+LAYERED_CSS = """
+.stage { position: relative; height: 640px; background: #fbfbfd; border-radius: 12px; overflow: hidden; }
+canvas { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+.reset { position: absolute; top: 10px; right: 10px; border: 0; border-radius: 8px; padding: 6px 10px; background: #1f4e79; color: white; cursor: pointer; }
+.hide-text { position: absolute; top: 10px; left: 12px; background: rgba(255,255,255,0.92); border-radius: 8px; padding: 6px 10px; font-size: 13px; color: #1f2937; cursor: pointer; }
+.hud { position: absolute; left: 12px; bottom: 12px; max-width: 46%; background: rgba(255,255,255,0.92); border-radius: 10px; padding: 8px 10px; font-size: 13px; line-height: 1.45; color: #1f2937; }
+"""
 
 from video_hsg.config import load_config
 from video_hsg.query.search import ENTITY_COLUMNS
@@ -47,7 +87,7 @@ def _pack(view: dict):
     return (
         view["info"],
         view["frame"],
-        view["frame_graph"],
+        view["layered"],
         view["timeline"],
         view["clip_graph"],
         view["video_graph"],
@@ -145,7 +185,14 @@ def build_demo(session: DemoSession):
                 )
                 with gr.Row():
                     frame_image = gr.Image(value=packed[1], type="pil", label="当前帧（跟着上面的播放和进度条）", interactive=False)
-                    frame_graph = gr.Image(value=packed[2], type="pil", label="当前帧层次场景图", interactive=False)
+                    frame_graph = gr.HTML(
+                        value=packed[2],
+                        html_template=LAYERED_HTML,
+                        css_template=LAYERED_CSS,
+                        js_on_load=LAYERED_JS,
+                        min_height=640,
+                        label="五层场景图",
+                    )
                 with gr.Row():
                     entity_table = gr.Dataframe(
                         value=packed[6],
@@ -161,6 +208,15 @@ def build_demo(session: DemoSession):
                         max_height=280,
                         wrap=True,
                     )
+            with gr.Tab("全视频三层"):
+                gr.Markdown("这一页把整段视频放在一起。横轴 X 是时间，每一格是一帧。竖轴是 Z，从上到下为数据里的 L1、L2、L3。L3 来自 `hierarchy.layer3_mapping`，不是属性。Y 轴按目标在画面里的左右位置分开。左下角画出了红 X、绿 Y、蓝 Z。")
+                gr.HTML(
+                    value=session.timeline_json(),
+                    html_template=TIMELINE_HTML,
+                    css_template=TIMELINE_CSS,
+                    js_on_load=TIMELINE_JS,
+                    min_height=720,
+                )
             with gr.Tab("时间层次"):
                 timeline = gr.Image(value=packed[3], type="pil", label="轨迹时间线", interactive=False)
                 clip_text = gr.Markdown(packed[8])
@@ -218,8 +274,9 @@ Track、Clip、Event 是节点。`SCENE_RELATION`、`PART_OF`、`SUBJECT`、`OBJ
         def refresh(frame_id, show_parts_value, show_boxes_value, highlight_value, playing):
             if playing:
                 light = session.frame_view(frame_id, bool(show_parts_value), highlight_value or [], show_boxes=bool(show_boxes_value))
-                skipped = [gr.update() for _ in range(len(view_outputs) - 2)]
-                return (light["info"], light["frame"], *skipped)
+                layered = session.layered_json(int(frame_id))
+                skipped = [gr.update() for _ in range(len(view_outputs) - 3)]
+                return (light["info"], light["frame"], layered, *skipped)
             return _pack(
                 session.view(
                     frame_id,
