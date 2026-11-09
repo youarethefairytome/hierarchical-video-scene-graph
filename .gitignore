@@ -27,3 +27,8 @@ HSGG_OPENEQA_JSON/
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+# 本地 API 凭据
+.env
+.env.*
+!.env.example

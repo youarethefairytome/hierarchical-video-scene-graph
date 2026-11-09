@@ -28,6 +28,13 @@ function apply(raw) {
   } catch (error) {
     data = { nodes: [], edges: [], title: "数据无法解析" };
   }
+  if (runtime.videoId !== data.video_id) {
+    runtime.videoId = data.video_id;
+    runtime.selected = null;
+    runtime.userMoved = false;
+    runtime.yaw = -0.62;
+    runtime.pitch = 0.48;
+  }
   runtime.nodes = data.nodes || [];
   runtime.edges = data.edges || [];
   runtime.title = data.title || "";

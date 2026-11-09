@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from video_hsg.config import load_config
-from video_hsg.io.reader import load_frames, make_local_names
+from video_hsg.io.reader import load_frames, make_local_names, source_frame_from_name
 from video_hsg.normalize.labels import canonical_label, normalize_predicate
 from video_hsg.pipeline import build_scene
 from video_hsg.query.search import search_bundle
@@ -54,6 +54,12 @@ def _frame(frame_id: int, entities: list[FrameEntity]) -> FrameGraph:
 
 
 class LabelAndGeometryTest(unittest.TestCase):
+    def test_dataset_source_frame_names(self):
+        self.assertEqual(source_frame_from_name("frame_000180_0007.200s", 6), 180)
+        self.assertEqual(source_frame_from_name("frame_000000_0000.000s", 9), 0)
+        self.assertEqual(source_frame_from_name("2d_rect_cam0_0_120", 6), 120)
+        self.assertEqual(source_frame_from_name("unknown", 6), 6)
+
     def test_local_names_and_aliases(self):
         self.assertEqual(make_local_names(["window", "window", "door"]), ["window1", "window2", "door"])
         self.assertEqual(canonical_label("Windows"), "window")

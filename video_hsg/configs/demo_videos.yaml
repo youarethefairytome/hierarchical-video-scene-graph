@@ -1,0 +1,24 @@
+videos:
+- id: nextqa_2535384528
+  title: 固定视角 · NExT-QA 高尔夫挥杆
+  path: data/video/nextqa_2535384528_fixed.mp4
+  camera: fixed
+  dataset: NExT-QA
+  source: https://huggingface.co/datasets/shuzhig/nextgqa/blob/main/videos/2535384528.mp4
+  description: NExT-QA 视频 2535384528 的前 12 秒稳定视角段，排除末尾转镜头；有轻微手持晃动。仅使用已有 HSGG 结果，不运行检测。
+  scene_bundle: processed/nextqa_2535384528/scene_bundle.json
+  scene_source_id: '49_2535384528'
+  graph_frame_mapping: source_frame
+  scene_video_sha256: 264162f4ea50dadcd2b8e9d6c45f487d6e0f27cc4721aa2b34eea8ed4137ec1c
+- id: navqa_seq0
+  title: 移动镜头 · CODa 校园
+  path: data/video/navqa_seq0_plain.mp4
+  camera: moving
+  source: https://coda.oden.utexas.edu/
+  description: 已有对应 HSGG 预处理结果，切换后所有页面一起更新。
+  scene_bundle: processed/navqa_seq0/scene_bundle.json
+  scene_source_id: hsgg_navqa_seq0_every10_full
+  scene_video_sha256: 3cc33c5f331e203a65b319c85738768b4a44c5425561f155ee94bb3df33a74fe
+  graph_frame_mapping: sampled_video
+  rgb_root: data/rgb/navqa_seq0
+  boxes_video: data/video/navqa_seq0_boxes.mp4

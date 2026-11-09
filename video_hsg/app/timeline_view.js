@@ -27,6 +27,14 @@ function apply(raw) {
   } catch (error) {
     data = { nodes: [], source_frames: [], title: "数据无法解析", frame_count: 1 };
   }
+  if (runtime.videoId !== data.video_id) {
+    runtime.videoId = data.video_id;
+    runtime.selected = null;
+    runtime.focusX = null;
+    runtime.userMoved = false;
+    runtime.yaw = 0.85;
+    runtime.pitch = 0.38;
+  }
   runtime.nodes = data.nodes || [];
   runtime.links = data.links || [];
   runtime.sourceFrames = data.source_frames || [];

@@ -31,6 +31,10 @@ def make_local_names(labels: list[str]) -> list[str]:
 
 
 def source_frame_from_name(stem: str, fallback: int) -> int:
+    # NExT-QA: frame_000180_0007.200s；前一个数字才是原视频帧号。
+    match = re.fullmatch(r"frame_(\d+)_\d+(?:\.\d+)?s", stem)
+    if match:
+        return int(match.group(1))
     match = re.search(r"_(\d+)$", stem)
     if match:
         return int(match.group(1))
