@@ -7,6 +7,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from gradio_client import Client
 
@@ -56,10 +57,36 @@ class GlobalVideoUITest(unittest.TestCase):
                 self.assertTrue(all("processed.mp4" in str(v) for v in videos))
                 self.assertTrue(client.predict("processed", "fixture_object", "实体", api_name="/do_search")["data"])
 
+                nodes = client.predict("processed", "", "entity", 1, api_name="/browse_video_nodes")
+                self.assertEqual(nodes[0]["data"][0][0], "track_fixture")
+                detail = client.predict("processed", "frame:11", 0, api_name="/inspect_video_node")
+                self.assertEqual(detail[0]["seconds"], 1.1)
+                self.assertEqual(detail[0]["record"]["frame_id"], 11)
+                sent = []
+
+                def answer(endpoint, key, payload):
+                    sent.append(payload)
+                    if "tools" in payload:
+                        message = {"tool_calls": [{"id": "nodes", "type": "function", "function": {
+                            "name": "search_graph", "arguments": '{"query":"","kind":"entity"}'}}]}
+                    else:
+                        message = {"content": json.dumps({"answer": "fixture answer", "node_ids": ["track_fixture"]})}
+                    return {"choices": [{"message": message}]}
+
+                with patch("video_hsg.question_answering.request_analysis", side_effect=answer):
+                    chat = client.predict("processed", "what is here?", "https://fixture.invalid/v1",
+                                          "fixture-key", "text-model", 1, 0, api_name="/ask_video_question")
+                self.assertIn("fixture answer", json.dumps(chat[0]))
+                self.assertIn("processed video summary", sent[-1]["messages"][1]["content"])
+                self.assertEqual(len(sent), 2)
+
                 pending = switch("pending")
                 self.assertIsNone(value(pending, "历史记录")["value"])
                 self.assertEqual(value(pending, "查询结果（点击一行跳到起始帧）")["data"], [])
                 self.assertEqual(value(pending, "当前视频的关联消融")["data"], [])
+                self.assertEqual(value(pending, "当前视频问答"), [])
+                self.assertEqual(value(pending, "全视频节点列表（点击一行查看详情）")["data"], [])
+                self.assertEqual(value(pending, "节点属性、部件及相邻关系"), {})
                 self.assertFalse(value(pending, "显示当前视频的识别框")["interactive"])
                 self.assertEqual(value(pending, "采样 / 预览帧")["value"], 0)
                 self.assertFalse(value(pending, "播放"))

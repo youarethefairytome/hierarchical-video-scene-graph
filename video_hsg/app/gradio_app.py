@@ -60,6 +60,7 @@ from video_hsg.service import ENTITY_TABLE_COLUMNS, RELATION_TABLE_COLUMNS, Demo
 from video_hsg.analysis import AnalysisWorkspace
 from video_hsg.video_workspace import VideoSceneRegistry
 from analysis_tab import build_analysis_tab
+from question_tab import build_question_tab
 from ui_theme import APP_CSS, app_header, build_theme
 
 def _table(rows: list[list], columns: list[str]) -> pd.DataFrame:
@@ -143,6 +144,8 @@ def build_demo(workspace: AnalysisWorkspace | None = None):
         with gr.Tabs(elem_id="workspace-tabs", overflow_behavior="wrap"):
             with gr.Tab("视频理解与演示", elem_id="video-workspace"):
                 analysis_panel = build_analysis_tab(workspace, video_picker, concurrency_id=queue_id)
+            with gr.Tab("视频问答", elem_id="qa-workspace"):
+                question_panel = build_question_tab(workspace, video_picker, analysis_panel, concurrency_id=queue_id)
             with gr.Tab("当前帧"):
                 info = gr.Markdown(packed[0])
                 with gr.Row():
@@ -199,7 +202,7 @@ def build_demo(workspace: AnalysisWorkspace | None = None):
         scene_outputs = [scene_notice, frame_slider, play, show_boxes, show_parts, highlight, movie,
                          whole_timeline, comparison, ablation, neo4j, query, kind, results, search_origin,
                          *label_buttons, *view_outputs]
-        all_outputs = [*analysis_panel.selection_outputs, *scene_outputs]
+        all_outputs = [*analysis_panel.selection_outputs, *scene_outputs, *question_panel.selection_outputs]
 
         def select_scene(video_id):
             scene = registry.get(video_id)
@@ -212,7 +215,7 @@ def build_demo(workspace: AnalysisWorkspace | None = None):
                     gr.update(value=False, interactive=scene.has_graph), [], scene.video_file(scene.has_graph),
                     scene.timeline_json(), scene.comparison, _ablation_frame(scene.session), scene.neo4j_text,
                     "", "全部", _table([], ENTITY_COLUMNS), "", *buttons,
-                    *_pack(scene.view(0, show_boxes=scene.has_graph)))
+                    *_pack(scene.view(0, show_boxes=scene.has_graph)), *question_panel.select_video(video_id))
 
         # 同一次响应更新全部页面；每个浏览器会话独立选择，不修改共享的 current_session。
         video_picker.change(select_scene, video_picker, all_outputs,

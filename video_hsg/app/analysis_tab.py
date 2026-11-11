@@ -49,6 +49,8 @@ def _model_feedback(level, title, detail="", suggestion="", url=""):
 class AnalysisPanel:
     selection_outputs: list
     select_video: Callable
+    settings_inputs: list
+    selected_run: object
 
 
 def build_analysis_tab(workspace: AnalysisWorkspace, video_picker=None, *, concurrency_id="analysis"):
@@ -326,4 +328,4 @@ def build_analysis_tab(workspace: AnalysisWorkspace, video_picker=None, *, concu
         const video = document.querySelector('#analysis-video video');
         if (video && Number.isFinite(seconds)) { video.currentTime = seconds; video.pause(); }
     }""")
-    return AnalysisPanel(selection_outputs, select_video)
+    return AnalysisPanel(selection_outputs, select_video, [endpoint, key, model, search_rounds, max_tokens], selected_run)

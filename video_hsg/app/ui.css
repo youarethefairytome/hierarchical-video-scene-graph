@@ -30,6 +30,12 @@
 .analysis-intro h2 { font-size: 22px; letter-spacing: -.5px; line-height: 1.4; color: #22384b; font-weight: 650; margin: 0 0 7px; }
 .analysis-intro p { color: #7d8a99; font-size: 13px; line-height: 1.7; margin: 0; }
 .analysis-layout { gap: 22px !important; align-items: flex-start !important; }
+.qa-layout { gap: 22px !important; align-items: flex-start !important; }
+#qa-workspace { gap: 18px; background: transparent; }
+#qa-workspace .surface-card { padding: 22px !important; border: 1px solid #e3e9ee !important; border-radius: 18px !important; background: #fff !important; box-shadow: 0 5px 20px #1e3c5015 !important; gap: 16px; min-width: 0; }
+#qa-context { padding: 12px 16px; border: 1px solid #dcebe6; border-radius: 10px; background: #eef6f3; color: #426b61; font-size: 12px; }
+#qa-workspace .block { box-shadow: none; }
+#qa-workspace label { font-size: 12px; }
 #video-workspace .surface-card { padding: 22px !important; border: 1px solid #e3e9ee !important; border-radius: 18px !important; background: #fff !important; box-shadow: 0 5px 20px #1e3c5015 !important; gap: 16px; min-width: 0; }
 .panel-heading { display: flex; align-items: center; gap: 11px; padding-bottom: 2px; }
 .panel-icon { display: grid; place-items: center; width: 38px; height: 38px; flex-shrink: 0; border-radius: 11px; color: #248276; background: #edf6f3; }
@@ -122,6 +128,7 @@
   .workspace-badge { display: none; }
   .analysis-intro h2 { font-size: 20px; }
   #video-workspace .surface-card { padding: 15px !important; }
+  #qa-workspace .surface-card { padding: 15px !important; }
   .metric { padding: 12px 7px; gap: 6px; }
   .metric-icon { width: 25px; height: 25px; }
   .metric strong { font-size: 18px; }
