@@ -60,7 +60,7 @@ from video_hsg.service import ENTITY_TABLE_COLUMNS, RELATION_TABLE_COLUMNS, Demo
 from video_hsg.analysis import AnalysisWorkspace
 from video_hsg.video_workspace import VideoSceneRegistry
 from analysis_tab import build_analysis_tab
-from question_tab import build_question_tab
+from question_tab import build_question_panel
 from ui_theme import APP_CSS, app_header, build_theme
 
 def _table(rows: list[list], columns: list[str]) -> pd.DataFrame:
@@ -144,8 +144,8 @@ def build_demo(workspace: AnalysisWorkspace | None = None):
         with gr.Tabs(elem_id="workspace-tabs", overflow_behavior="wrap"):
             with gr.Tab("视频理解与演示", elem_id="video-workspace"):
                 analysis_panel = build_analysis_tab(workspace, video_picker, concurrency_id=queue_id)
-            with gr.Tab("视频问答", elem_id="qa-workspace"):
-                question_panel = build_question_tab(workspace, video_picker, analysis_panel, concurrency_id=queue_id)
+                with gr.Group(elem_id="qa-workspace", elem_classes="surface-card"):
+                    question_panel = build_question_panel(workspace, video_picker, analysis_panel, concurrency_id=queue_id)
             with gr.Tab("当前帧"):
                 info = gr.Markdown(packed[0])
                 with gr.Row():

@@ -1,4 +1,4 @@
-"""视频问答、图证据和全视频节点浏览。"""
+"""视频理解页下方的问答与节点查询分区。"""
 from __future__ import annotations
 
 import os
@@ -22,7 +22,7 @@ class QuestionPanel:
     select_video: Callable
 
 
-def build_question_tab(workspace, video_picker, analysis_panel, *, concurrency_id="video-workspace"):
+def build_question_panel(workspace, video_picker, analysis_panel, *, concurrency_id="video-workspace"):
     service = VideoQuestionService(workspace)
 
     def context_text(video_id, run_id=None):
@@ -48,26 +48,26 @@ def build_question_tab(workspace, video_picker, analysis_panel, *, concurrency_i
 
     initial_id = video_picker.value
     initial_rows, initial_page, initial_status = node_page(initial_id, "", "all", 1)
-    gr.HTML('<div class="analysis-intro"><h2>视频问答</h2><p>围绕当前视频提问，按需检索整段视频的节点与关系。</p></div>')
+    gr.HTML(panel_heading("insight", "视频问答与节点查询", "围绕当前视频继续提问，已有整段分析自动加入上下文"))
     context_notice = gr.Markdown(context_text(initial_id), elem_id="qa-context")
-    with gr.Row(elem_classes="qa-layout"):
-        with gr.Column(scale=6, min_width=360, elem_classes="surface-card"):
-            gr.HTML(panel_heading("insight", "围绕视频连续追问", "使用视频理解页的模型设置，已有整段分析自动加入上下文"))
-            chatbot = gr.Chatbot(value=[], height=450, label="当前视频问答", buttons=["copy", "copy_all"],
+    with gr.Tabs(elem_id="qa-tools-tabs"):
+        with gr.Tab("视频问答"):
+            chatbot = gr.Chatbot(value=[], height=300, label="当前视频问答", buttons=["copy", "copy_all"],
                                  placeholder="例如：主要人物与哪些物体发生了关系？请给出节点和时间证据。",
                                  sanitize_html=True, allow_tags=False, allow_file_downloads=False)
             question = gr.Textbox(label="你的问题", placeholder="输入问题，按 Enter 发送；可继续追问同一个实体或事件。", lines=2)
-            with gr.Row():
+            with gr.Row(elem_classes="qa-actions"):
                 ask_button = gr.Button("发送问题", variant="primary")
                 clear_button = gr.Button("清空当前对话")
             qa_status = gr.HTML(_model_feedback("info", "等待提问", "回答根据已有图数据生成，近 8 轮对话用于理解连续追问。"))
             with gr.Accordion("本轮图检索证据", open=False):
                 qa_trace = gr.JSON(value=[], label="问答查询与返回节点")
-        with gr.Column(scale=5, min_width=350, elem_classes="surface-card"):
-            gr.HTML(panel_heading("entity", "全视频节点查询", "不限于当前帧，浏览和查看节点详情无需调用模型"))
-            node_query = gr.Textbox(label="节点关键词 / 编号", placeholder="例如 person、holding、track_00002；留空可列举全部")
-            node_kind = gr.Dropdown(choices=[("全部图节点", "all"), *[(label, value) for value, label in KIND_NAMES.items()]],
-                                    value="all", label="节点类型")
+        with gr.Tab("全视频节点"):
+            gr.Markdown("浏览整段视频的节点，查看详情无需调用模型。", elem_classes="helper-text")
+            with gr.Row():
+                node_query = gr.Textbox(label="节点关键词 / 编号", placeholder="例如 person、holding、track_00002；留空可列举全部", scale=3)
+                node_kind = gr.Dropdown(choices=[("全部图节点", "all"), *[(label, value) for value, label in KIND_NAMES.items()]],
+                                        value="all", label="节点类型", scale=1)
             with gr.Row():
                 page = gr.Number(value=initial_page, minimum=1, precision=0, label="页码")
                 search = gr.Button("查询节点")
